@@ -1,58 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button } from 'react-native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import React, { useState, useEffect } from "react";
+import { Text, View, StyleSheet, Button } from "react-native";
+import { BarCodeScanner } from "expo-barcode-scanner";
 
 export default function App() {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
-  const [text, setText] = useState('Not yet scanned')
-  const [status, setstatus] = useState('not scanned')
-
+  const [text, setText] = useState("");
+  const [roll, setroll] = useState("");
+  const [status, setstatus] = useState("");
 
   const askForCameraPermission = () => {
     (async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })()
-  }
+      setHasPermission(status === "granted");
+    })();
+  };
 
-  const mark_entry=async ()=>{
+  const mark_entry = async () => {
     try {
+     
       let res = await fetch("https://pass-server-o7gu.onrender.com/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          uniqkey: text,
+          t_id: text,
         }),
       });
-    
+
       if (!res.ok) {
         throw new Error(`Request failed with status: ${res.status}`);
       }
-    
+
       let data = await res.json();
       setScanned(false);
+      setroll(data.rno);
       console.log(data);
-      if (data.Success){
-        setstatus("Give Entry");
-        console.log(status)
-      }
-      else{
-        setstatus(data.errors)
-        console.log(data.Success)
-        console.log(data.errors)
+      if (data.Success) {
+        setstatus("Valid QR!");
+
+        console.log(status);
+      } else {
+        setstatus(data.errors);
+        console.log(data.Success);
+
+        console.log(data.errors);
       }
       
+
       return data;
     } catch (error) {
       console.error("Error during fetch:", error);
     }
-    
-    
-    
-  }
+  };
 
   // Request Camera Permission
   useEffect(() => {
@@ -62,8 +63,10 @@ export default function App() {
   // What happens when we scan the bar code
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
-    setText(data)
-    console.log('Type: ' + type + '\nData: ' + data)
+    setText(data);
+    
+
+    console.log("Type: " + type + "\nData: " + data);
   };
 
   // Check permissions and return the screens
@@ -71,15 +74,19 @@ export default function App() {
     return (
       <View style={styles.container}>
         <Text>Requesting for camera permission</Text>
-      </View>)
+      </View>
+    );
   }
   if (hasPermission === false) {
     return (
       <View style={styles.container}>
         <Text style={{ margin: 10 }}>No access to camera</Text>
-        <Button title={'Allow Camera'} onPress={() => askForCameraPermission()} />
-       
-      </View>)
+        <Button
+          title={"Allow Camera"}
+          onPress={() => askForCameraPermission()}
+        />
+      </View>
+    );
   }
 
   // Return the View
@@ -88,13 +95,21 @@ export default function App() {
       <View style={styles.barcodebox}>
         <BarCodeScanner
           onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-          style={{ height: 400, width: 400 }} />
+          style={{ height: 400, width: 400 }}
+        />
       </View>
       <Text style={styles.maintext}>{text}</Text>
 
-      {scanned && <Button title={'Scan again?'} onPress={mark_entry} color='tomato' />}
-      <Text style={styles.maintext}>{status}</Text>
+      {scanned && (
+        <Button title={"Scan again?"} onPress={()=>{
+        
+          mark_entry()
 
+        }} 
+          color="tomato" />
+      )}
+      <Text style={styles.maintext}>{status}</Text>
+      <Text style={styles.maintext}>{roll}</Text>
     </View>
   );
 }
@@ -102,22 +117,21 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   maintext: {
     fontSize: 16,
     margin: 20,
   },
   barcodebox: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     height: 300,
     width: 300,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderRadius: 30,
-    backgroundColor: 'tomato'
-  }
+    backgroundColor: "tomato",
+  },
 });
- 
